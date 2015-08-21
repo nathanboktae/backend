@@ -24,6 +24,10 @@
   "dependencies": {
     "glob-to-regexp": "0.0.1"
   },
+  "scripts": {
+    "postinstall": "bower install",
+    "test": "gulp test"
+  },
   "repository": {
     "type": "git",
     "url": "git://github.com/callmehiphop/backend.git"
