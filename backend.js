@@ -316,7 +316,7 @@ var Request = module.exports = function () {
       return resolve();
     }
 
-    timer = setTimeout(resolve, mock.options.delay || 100);
+    timer = setTimeout(resolve, mock.options.delay);
   }
 
   /**
