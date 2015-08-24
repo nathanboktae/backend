@@ -6,14 +6,18 @@ var Response = require('./lib/response');
 var mocks = require('./lib/mocks');
 var pending = require('./lib/pending');
 var _ = require('./lib/dash');
-var backend = module.exports = {};
+var backend = module.exports = {
+  defaults: {
+    delay: 0
+  }
+};
 
 global.XMLHttpRequest = require('./lib/request');
 
 
 function when (expected, method, url, data, headers) {
   var mock = mocks.create(method, url, data, headers, expected);
-  mock.options = {};
+  mock.options = _.extend({}, backend.defaults);
 
   return {
     respond: function (status, data, headers) {
@@ -23,7 +27,7 @@ function when (expected, method, url, data, headers) {
       mock.passthrough = true;
     },
     options: function(options) {
-      mock.options = options;
+      _.extend(mock.options, options);
       return this;
     }
   };
@@ -402,7 +406,7 @@ var Request = module.exports = function () {
     pending.add(setTimeout(function() {
       pending.remove(fakeRequest);
       resolve();
-    }, mock.options.delay || 100), fakeRequest);
+    }, mock.options.delay), fakeRequest);
   }
 
   /**
