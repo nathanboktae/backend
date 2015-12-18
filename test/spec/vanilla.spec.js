@@ -251,19 +251,22 @@ describe('backend with vanillajs', function() {
   it('should accept functions within .respond() for dynamic responses', function() {
     var xhr = new XMLHttpRequest()
 
-    backend.when('GET', 'fixtures/*.json').respond(function() {
+    backend.when('POST', '/chat').respond(function(body, headers) {
+      body.should.equal('hello!')
+      headers['X-Foo'].should.equal('bar')
+
       return {
-        ohh: 'yeah'
+        echo: 'hello!'
       }
     })
 
-    xhr.open('GET', 'fixtures/data.json')
-    xhr.send()
+    xhr.open('POST', '/chat')
+    xhr.setRequestHeader('X-Foo', 'bar')
+    xhr.send('hello!')
     backend.flush()
 
     expect(JSON.parse(xhr.responseText)).to.eql({
-      ohh: 'yeah'
+      echo: 'hello!'
     })
   })
-
 })
