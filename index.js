@@ -1,6 +1,5 @@
 'use strict';
 
-var Response = require('./lib/response');
 var mocks = require('./lib/mocks');
 var pending = require('./lib/pending');
 var backend = module.exports = {
@@ -18,7 +17,14 @@ function when (expected, method, url, data, headers) {
 
   return {
     respond: function (status, data, headers) {
-      mock.response = new Response(status, data, headers);
+      if (typeof status != 'number') {
+        headers = data, data = status, status = 200
+      }
+      mock.response = {
+        status: status,
+        data: data,
+        headers: headers
+      }
     },
     passthrough: function() {
       mock.passthrough = true;
