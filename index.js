@@ -3,7 +3,6 @@
 var Response = require('./lib/response');
 var mocks = require('./lib/mocks');
 var pending = require('./lib/pending');
-var _ = require('./lib/dash');
 var backend = module.exports = {
   defaults: {
     delay: 0
@@ -15,7 +14,7 @@ global.XMLHttpRequest = require('./lib/request');
 
 function when (expected, method, url, data, headers) {
   var mock = mocks.create(method, url, data, headers, expected);
-  mock.options = _.extend({}, backend.defaults);
+  mock.options = Object.assign({}, backend.defaults);
 
   return {
     respond: function (status, data, headers) {
@@ -25,7 +24,7 @@ function when (expected, method, url, data, headers) {
       mock.passthrough = true;
     },
     options: function(options) {
-      _.extend(mock.options, options);
+      Object.assign(mock.options, options);
       return this;
     }
   };
@@ -39,7 +38,7 @@ function when (expected, method, url, data, headers) {
  * @param {object} headers
  * @return {object} respond
  */
-backend.when = _.bind(when, backend, false);
+backend.when = when.bind(backend, false);
 
 
 /**
@@ -50,10 +49,10 @@ backend.when = _.bind(when, backend, false);
  * @param {object} headers
  * @return {object} respond
  */
-backend.expect = _.bind(when, backend, true);
+backend.expect = when.bind(backend, true);
 
-_.each(['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], function(method) {
-  backend['expect' + method] = _.bind(when, backend, true, method);
+['GET', 'POST', 'PUT', 'DELETE', 'PATCH'].forEach(function(method) {
+  backend['expect' + method] = when.bind(backend, true, method);
 });
 
 /**

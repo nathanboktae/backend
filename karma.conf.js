@@ -9,7 +9,7 @@ module.exports = function (karma) {
     logLevel: karma.LOG_ERROR,
 
     reporters: ['spec'],
-    browsers: [process.env.TRAVIS ? 'Firefox' : 'PhantomJS'],
+    browsers: ['Firefox'],
     plugins: ['karma-*'],
 
     frameworks: [
