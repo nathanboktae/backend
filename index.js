@@ -1,13 +1,12 @@
 'use strict'
 
-var mocks = require('./lib/mocks')
-var backend = module.exports = {}
-
-var pendingRequests = [];
-
+var stubs = [],
+    pendingRequests = [],
+    Mock = require('./mock')
 
 function when(expected, method, url, data, headers) {
-  var mock = mocks.create(method, url, data, headers, expected)
+  var mock = new Mock(expected, method, url, data, headers)
+  stubs.push(mock)
 
   return {
     respond: function(status, data, headers) {
@@ -26,52 +25,56 @@ function when(expected, method, url, data, headers) {
   }
 }
 
-backend.when = when.bind(backend, false)
-backend.expect = when.bind(backend, true)
+backend = module.exports = {
+  when: when.bind(backend, false),
+  expect: when.bind(backend, true),
+
+  verifyNoOutstandingExpectation: function() {
+    var expected = stubs.filter(function(mock) { return mock.expected })
+    if (expected.length) {
+      throw new Error('Expected no outstanding expectations, but there were ' + expected.length + '\n' + expected[0].toString())
+    }
+  },
+
+  verifyNoOutstandingRequest: function() {
+    if (pendingRequests.length) {
+      throw new Error('Expected no outstanding requests, but there were ' + pendingRequests.length
+        + '\n' + pendingRequests[0].request.toString())
+    }
+  },
+
+  flush: function() {
+    while (pendingRequests.length) {
+      var pending = pendingRequests.shift()
+      clearTimeout(pending.timeoutId)
+
+      if (pending.request.onreadystatechange) {
+        pending.request.onreadystatechange()
+      } else if (pending.request.onload) {
+        pending.request.onload()
+      }
+    }
+  },
+
+  clear: function() {
+    stubs.length = 0
+    pendingRequests.length = 0
+  }
+
+}
 
 ;['GET', 'POST', 'PUT', 'DELETE', 'PATCH'].forEach(function(method) {
   backend['expect' + method] = when.bind(backend, true, method)
 })
 
-backend.verifyNoOutstandingExpectation = function() {
-  var expected = mocks.outstandingExpected()
-  if (expected.length) {
-    throw new Error('Expected no outstanding expectations, but there were ' + expected.length + '\n' + expected[0].toString());
-  }
-}
-
-backend.verifyNoOutstandingRequest = function() {
-  if (pendingRequests.length) {
-    throw new Error('Expected no outstanding requests, but there were ' + pendingRequests.length
-      + '\n' + pendingRequests[0].request.toString());
-  }
-}
-
-backend.flush = function() {
-  while (pendingRequests.length) {
-    var pending = pendingRequests.shift();
-    clearTimeout(pending.timeoutId);
-
-    if (pending.request.onreadystatechange) {
-      pending.request.onreadystatechange();
-    } else if (pending.request.onload) {
-      pending.request.onload();
-    }
-  }
-}
-
-backend.clear = function() {
-  mocks.clear()
-  pendingRequests.length = 0
-}
 
 
 function removePending(request) {
   for (var i = 0; i < pendingRequests.length; i++) {
     if (pendingRequests[i].request === request) {
-      clearTimeout(pendingRequests[i].timeoutId);
-      pendingRequests.splice(i, 1);
-      return;
+      clearTimeout(pendingRequests[i].timeoutId)
+      pendingRequests.splice(i, 1)
+      return
     }
   }
 }
@@ -149,16 +152,26 @@ global.XMLHttpRequest = function() {
     // jquery will set to null
     body = body || undefined
 
-    if (!(mock = mocks.match(method, url, body, headers))) {
+    for (var i = 0; i < stubs.length; i++) {
+      if (stubs[i].match(method, url, body, headers)) {
+        mock = stubs[i]
+        if (mock.expected) {
+          stubs.splice(i, 1)
+        }
+        break
+      }
+    }
+
+    if (!mock) {
       var msg = 'Unexpected request: ' + method + ' ' + url
       if (body) {
         msg += typeof body == 'object' ? ('\n' + JSON.stringify(body)) : body
       }
-      throw new Error(msg);
+      throw new Error(msg)
     }
 
     if (!mock.response && !mock.passthrough) {
-      throw new TypeError('No response has been defined for ' + mock.toString());
+      throw new TypeError('No response has been defined for ' + mock.toString())
     }
 
     return mock.passthrough ? fakeRequest.sendRealRequest(body) : fakeRequest.sendFakeRequest(body, headers)
