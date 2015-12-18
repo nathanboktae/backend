@@ -69,9 +69,7 @@ describe('pending requests', function() {
     it('should clear the timeout and not resolve twice', function(done) {
       var xhr = new XMLHttpRequest(), called = 0
 
-      backend.when('GET', 'greeting').options({
-        delay: 30
-      }).respond('hello!')
+      backend.when('GET', 'greeting').respond('hello!')
 
       xhr.onreadystatechange = function() {
         called++
@@ -87,7 +85,7 @@ describe('pending requests', function() {
       setTimeout(function() {
         called.should.equal(1)
         done()
-      }, 50)
+      }, 10)
     })
   })
 })

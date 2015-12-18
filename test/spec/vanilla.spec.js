@@ -135,61 +135,34 @@ describe('backend with vanillajs', function() {
     expect(response).not.to.exist
   })
 
-  it('should be able to delay the xhr call via defaults', function(done) {
-    var startTime = new Date().getTime()
-    var xhr = new XMLHttpRequest()
-    var response
-
-    backend.defaults.delay = 550
-
-    backend
-      .when('GET', 'fixtures/data.json')
-      .respond({
-        test: 'oh my glob'
-      })
-
-    xhr.onreadystatechange = function() {
-      response = JSON.parse(xhr.responseText)
-      response.should.be.a('object')
-      response.test.should.equal('oh my glob')
-      expect(new Date().getTime() - startTime).to.be.above(500)
-      done()
-    }
-
-    xhr.open('GET', 'fixtures/data.json', true)
-    xhr.send()
-
-    expect(response).not.to.exist
-  })
-
-  it('should be able to delay the xhr call via explicit options, overriding defaults', function(done) {
+  xit('should be able to delay the xhr by providing the response at a later time', function(done) {
     var startTime = new Date().getTime(),
         xhr = new XMLHttpRequest(),
         response
 
-    backend.defaults.delay = 1100
-
-    backend
-      .when('GET', 'fixtures/data.json')
-      .options({
-        delay: 550
-      })
-      .respond({
-        test: 'oh my glob'
-      })
+    var expectation = backend.expect('GET', 'fixtures/data.json')
 
     xhr.onreadystatechange = function() {
       response = JSON.parse(xhr.responseText)
-      response.should.be.a('object')
-      response.test.should.equal('oh my glob')
-      expect(new Date().getTime() - startTime).to.be.above(500).and.below(700)
-      done()
     }
 
     xhr.open('GET', 'fixtures/data.json', true)
     xhr.send()
 
     expect(response).not.to.exist
+
+    setTimeout(function() {
+      expectation.respond({
+        test: 'oh my glob'
+      })
+      expect(response).not.to.exist
+
+      setTimeout(function() {
+        response.should.be.a('object')
+        response.test.should.equal('oh my glob')
+        done()
+      }, 5)
+    }, 10)
   })
 
   it('should serve up mock data when params match', function() {
