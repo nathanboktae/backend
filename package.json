@@ -26,7 +26,8 @@
     "vinyl-source-stream": "^1.0.0"
   },
   "scripts": {
-    "test": "gulp test"
+    "test": "karma start --single-run",
+    "browserify": "browserify index.js -s backend -o backend.js"
   },
   "repository": {
     "type": "git",
